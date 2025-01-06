@@ -1,31 +1,26 @@
 // import joi from "joi";
-import { Router } from "express";
-import { authenticateRequest } from "../../middlewares/auth";
-import {
-  asyncHandler,
-  checkIfUserIsAdmin,
-  validateConfiguration,
-} from "../../middlewares/api-utils";
+
 import * as AdminController from "../controllers/admin";
+import { adminContract } from "@monkeytype/contracts/admin";
+import { initServer } from "@ts-rest/express";
+import { callController } from "../ts-rest-adapter";
 
-const router = Router();
-
-router.use(
-  validateConfiguration({
-    criteria: (configuration) => {
-      return configuration.admin.endpointsEnabled;
-    },
-    invalidMessage: "Admin endpoints are currently disabled.",
-  })
-);
-
-router.get(
-  "/",
-  authenticateRequest({
-    noCache: true,
-  }),
-  checkIfUserIsAdmin(),
-  asyncHandler(AdminController.test)
-);
-
-export default router;
+const s = initServer();
+export default s.router(adminContract, {
+  test: {
+    handler: async (r) => callController(AdminController.test)(r),
+  },
+  toggleBan: {
+    handler: async (r) => callController(AdminController.toggleBan)(r),
+  },
+  acceptReports: {
+    handler: async (r) => callController(AdminController.acceptReports)(r),
+  },
+  rejectReports: {
+    handler: async (r) => callController(AdminController.rejectReports)(r),
+  },
+  sendForgotPasswordEmail: {
+    handler: async (r) =>
+      callController(AdminController.sendForgotPasswordEmail)(r),
+  },
+});

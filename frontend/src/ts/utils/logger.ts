@@ -1,12 +1,20 @@
-import { isLocalhost } from "./misc";
+import { z } from "zod";
+import { LocalStorageWithSchema } from "./local-storage-with-schema";
+import { isDevEnvironment } from "./misc";
 
 const nativeLog = console.log;
 const nativeWarn = console.warn;
 const nativeError = console.error;
 
-let debugLogs = localStorage.getItem("debugLogs") === "true" ?? false;
+const debugLogsLS = new LocalStorageWithSchema({
+  key: "debugLogs",
+  schema: z.boolean(),
+  fallback: false,
+});
 
-if (isLocalhost()) {
+let debugLogs = debugLogsLS.get();
+
+if (isDevEnvironment()) {
   debugLogs = true;
   debug("Debug logs automatically enabled on localhost");
 }
@@ -14,19 +22,18 @@ if (isLocalhost()) {
 export function toggleDebugLogs(): void {
   debugLogs = !debugLogs;
   info(`Debug logs ${debugLogs ? "enabled" : "disabled"}`);
-  localStorage.setItem("debugLogs", debugLogs.toString());
+  debugLogsLS.set(debugLogs);
 }
 
-export function info(...args: unknown[]): void {
+function info(...args: unknown[]): void {
   nativeLog(
     "%cINFO",
     "background:#4CAF50;color: #111;padding:0 5px;border-radius:10px",
-    //@ts-ignore
     ...args
   );
 }
 
-export function warn(...args: unknown[]): void {
+function warn(...args: unknown[]): void {
   nativeWarn(
     "%cWRN",
     "background:#FFC107;color: #111;padding:0 5px;border-radius:10px",
@@ -34,7 +41,7 @@ export function warn(...args: unknown[]): void {
   );
 }
 
-export function error(...args: unknown[]): void {
+function error(...args: unknown[]): void {
   nativeError(
     "%cERR",
     "background:#F44336;color: #111;padding:0 5px;border-radius:10px",
@@ -42,7 +49,7 @@ export function error(...args: unknown[]): void {
   );
 }
 
-export function debug(...args: unknown[]): void {
+function debug(...args: unknown[]): void {
   if (!debugLogs) return;
   nativeLog(
     "%cDEBG",
